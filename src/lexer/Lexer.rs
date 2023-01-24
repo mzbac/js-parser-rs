@@ -48,10 +48,12 @@ impl<'a> Lexer<'a> {
                 Some(Token::Star)
             }
             '/' => {
+                // manually added
                 if self.peek_n(1) == Some('/') {
                     self.pos += 2;
                     self.skip_comment();
                     None
+                    // manually added
                 } else if self.peek_n(1) == Some('*') {
                     self.pos += 2;
                     self.skip_comment_block();
@@ -246,7 +248,7 @@ impl<'a> Lexer<'a> {
             }
         }
     }
-
+    // manually added
     fn skip_comment(&mut self) {
         while let Some(ch) = self.peek() {
             if ch != '\n' {
@@ -257,6 +259,7 @@ impl<'a> Lexer<'a> {
             }
         }
     }
+    // manually added
     fn skip_comment_block(&mut self) {
         while let Some(ch) = self.peek() {
             if ch == '*' && self.peek_n(1) == Some('/') {
@@ -436,6 +439,5 @@ mod tests {
         assert_eq!(token13, Some(Token::Return));
         assert_eq!(token14, Some(Token::Identifier("z".to_string())));
         assert_eq!(token15, Some(Token::Semicolon));
-
     }
 }
