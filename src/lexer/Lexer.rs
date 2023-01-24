@@ -1,8 +1,7 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
-use super::Token::{Token};
-
+use super::Token::Token;
 
 struct Lexer<'a> {
     source: Peekable<Chars<'a>>,
@@ -49,8 +48,18 @@ impl<'a> Lexer<'a> {
                 Some(Token::Star)
             }
             '/' => {
-                self.pos += 1;
-                Some(Token::Slash)
+                if self.peek_n(1) == Some('/') {
+                    self.pos += 2;
+                    self.skip_comment();
+                    None
+                } else if self.peek_n(1) == Some('*') {
+                    self.pos += 2;
+                    self.skip_comment_block();
+                    None
+                } else {
+                    self.pos += 1;
+                    Some(Token::Slash)
+                }
             }
             '(' => {
                 self.pos += 1;
@@ -237,53 +246,196 @@ impl<'a> Lexer<'a> {
             }
         }
     }
+
+    fn skip_comment(&mut self) {
+        while let Some(ch) = self.peek() {
+            if ch != '\n' {
+                self.pos += 1;
+            } else {
+                self.pos += 1;
+                break;
+            }
+        }
+    }
+    fn skip_comment_block(&mut self) {
+        while let Some(ch) = self.peek() {
+            if ch == '*' && self.peek_n(1) == Some('/') {
+                self.pos += 2;
+                break;
+            } else {
+                self.pos += 1;
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
-    fn test_next_token() {
-        let source = "var x = 10;";
-        let mut lexer = Lexer::new(source);
-
-        assert_eq!(lexer.next_token(), Some(Token::Var));
-        assert_eq!(lexer.next_token(), Some(Token::Identifier("x".to_string())));
-        assert_eq!(lexer.next_token(), Some(Token::Equal));
-        assert_eq!(lexer.next_token(), Some(Token::Number(10.0)));
-        assert_eq!(lexer.next_token(), Some(Token::Semicolon));
-        assert_eq!(lexer.next_token(), None);
+    fn test_number() {
+        let mut lexer = Lexer::new("123");
+        let token = lexer.next_token();
+        assert_eq!(token, Some(Token::Number(123.0)));
     }
 
     #[test]
-    fn test_string_token() {
-        let source = "var name = \"John\";";
-        let mut lexer = Lexer::new(source);
-
-        assert_eq!(lexer.next_token(), Some(Token::Var));
-        assert_eq!(
-            lexer.next_token(),
-            Some(Token::Identifier("name".to_string()))
-        );
-        assert_eq!(lexer.next_token(), Some(Token::Equal));
-        assert_eq!(lexer.next_token(), Some(Token::String("John".to_string())));
-        assert_eq!(lexer.next_token(), Some(Token::Semicolon));
-        assert_eq!(lexer.next_token(), None);
+    fn test_string() {
+        let mut lexer = Lexer::new("\"hello world\"");
+        let token = lexer.next_token();
+        assert_eq!(token, Some(Token::String("hello world".to_string())));
     }
 
     #[test]
-    fn test_comparison_tokens() {
-        let source = "x > 10 && y < 20";
+    fn test_identifier() {
+        let mut lexer = Lexer::new("var x = 10");
+        let token1 = lexer.next_token();
+        let token2 = lexer.next_token();
+        let token3 = lexer.next_token();
+        let token4 = lexer.next_token();
+        assert_eq!(token1, Some(Token::Var));
+        assert_eq!(token2, Some(Token::Identifier("x".to_string())));
+        assert_eq!(token3, Some(Token::Equal));
+        assert_eq!(token4, Some(Token::Number(10.0)));
+    }
+
+    #[test]
+    fn test_operators() {
+        let mut lexer = Lexer::new("a + b");
+        let token1 = lexer.next_token();
+        let token2 = lexer.next_token();
+        let token3 = lexer.next_token();
+        assert_eq!(token1, Some(Token::Identifier("a".to_string())));
+        assert_eq!(token2, Some(Token::Plus));
+        assert_eq!(token3, Some(Token::Identifier("b".to_string())));
+    }
+
+    #[test]
+    fn test_punctuation() {
+        let mut lexer = Lexer::new("if (x < 10) {");
+        let token1 = lexer.next_token();
+        let token2 = lexer.next_token();
+        let token3 = lexer.next_token();
+        let token4 = lexer.next_token();
+        let token5 = lexer.next_token();
+        let token6 = lexer.next_token();
+        let token7 = lexer.next_token();
+        assert_eq!(token1, Some(Token::If));
+        assert_eq!(token2, Some(Token::LeftParen));
+        assert_eq!(token3, Some(Token::Identifier("x".to_string())));
+        assert_eq!(token4, Some(Token::Less));
+        assert_eq!(token5, Some(Token::Number(10.0)));
+        assert_eq!(token6, Some(Token::RightParen));
+        assert_eq!(token7, Some(Token::LeftBrace));
+    }
+    #[test]
+    fn test_comments() {
+        let mut lexer = Lexer::new("// this is a comment");
+        let token = lexer.next_token();
+        assert_eq!(token, None);
+    }
+
+    #[test]
+    fn test_multiline_code() {
+        let source = "var x = 10;
+                      var y = 20;
+                      var z = x + y;
+                      return z;";
         let mut lexer = Lexer::new(source);
 
-        assert_eq!(lexer.next_token(), Some(Token::Identifier("x".to_string())));
-        assert_eq!(lexer.next_token(), Some(Token::Greater));
-        assert_eq!(lexer.next_token(), Some(Token::Number(10.0)));
-        assert_eq!(lexer.next_token(), Some(Token::AmpersandAmpersand));
-        assert_eq!(lexer.next_token(), Some(Token::Identifier("y".to_string())));
-        assert_eq!(lexer.next_token(), Some(Token::Less));
-        assert_eq!(lexer.next_token(), Some(Token::Number(20.0)));
-        assert_eq!(lexer.next_token(), None);
+        let token1 = lexer.next_token();
+        let token2 = lexer.next_token();
+        let token3 = lexer.next_token();
+        let token4 = lexer.next_token();
+        let token5 = lexer.next_token();
+        let token6 = lexer.next_token();
+        let token7 = lexer.next_token();
+        let token8 = lexer.next_token();
+        let token9 = lexer.next_token();
+        let token10 = lexer.next_token();
+        let token11 = lexer.next_token();
+        let token12 = lexer.next_token();
+        let token13 = lexer.next_token();
+
+        assert_eq!(token1, Some(Token::Var));
+        assert_eq!(token2, Some(Token::Identifier("x".to_string())));
+        assert_eq!(token3, Some(Token::Equal));
+        assert_eq!(token4, Some(Token::Number(10.0)));
+        assert_eq!(token5, Some(Token::Semicolon));
+        assert_eq!(token6, Some(Token::Var));
+        assert_eq!(token7, Some(Token::Identifier("y".to_string())));
+        assert_eq!(token8, Some(Token::Equal));
+        assert_eq!(token9, Some(Token::Number(20.0)));
+        assert_eq!(token10, Some(Token::Semicolon));
+        assert_eq!(token11, Some(Token::Var));
+        assert_eq!(token12, Some(Token::Identifier("z".to_string())));
+        assert_eq!(token13, Some(Token::Equal));
+
+        let token14 = lexer.next_token();
+        let token15 = lexer.next_token();
+        let token16 = lexer.next_token();
+        let token17 = lexer.next_token();
+        let token18 = lexer.next_token();
+        assert_eq!(token14, Some(Token::Identifier("x".to_string())));
+        assert_eq!(token15, Some(Token::Plus));
+        assert_eq!(token16, Some(Token::Identifier("y".to_string())));
+        assert_eq!(token17, Some(Token::Semicolon));
+        assert_eq!(token18, Some(Token::Return));
+    }
+
+    #[test]
+    fn test_multiline_code_with_comments() {
+        let source = "var x = 10; // x is assigned the value of 10
+                      /* This is a block comment
+                      var y = 20;
+                      */ var z = x + 15; // z is assigned the value of x + 15
+                      return z;";
+        let mut lexer = Lexer::new(source);
+
+        let token1 = lexer.next_token();
+        let token2 = lexer.next_token();
+        let token3 = lexer.next_token();
+        let token4 = lexer.next_token();
+        assert_eq!(token1, Some(Token::Var));
+        assert_eq!(token2, Some(Token::Identifier("x".to_string())));
+        assert_eq!(token3, Some(Token::Equal));
+        assert_eq!(token4, Some(Token::Number(10.0)));
+
+        let token5 = lexer.next_token();
+        assert_eq!(token5, Some(Token::Semicolon));
+
+        let comment = lexer.next_token();
+        assert_eq!(comment, None);
+
+        let comment_block = lexer.next_token();
+        assert_eq!(comment_block, None);
+
+        let token6 = lexer.next_token();
+        let token7 = lexer.next_token();
+        let token8 = lexer.next_token();
+        let token9 = lexer.next_token();
+        let token10 = lexer.next_token();
+        let token11 = lexer.next_token();
+        let token12 = lexer.next_token();
+
+        assert_eq!(token6, Some(Token::Var));
+        assert_eq!(token7, Some(Token::Identifier("z".to_string())));
+        assert_eq!(token8, Some(Token::Equal));
+        assert_eq!(token9, Some(Token::Identifier("x".to_string())));
+        assert_eq!(token10, Some(Token::Plus));
+        assert_eq!(token11, Some(Token::Number(15.0)));
+        assert_eq!(token12, Some(Token::Semicolon));
+
+        let comment2 = lexer.next_token();
+        assert_eq!(comment2, None);
+
+        let token13 = lexer.next_token();
+        let token14 = lexer.next_token();
+        let token15 = lexer.next_token();
+
+        assert_eq!(token13, Some(Token::Return));
+        assert_eq!(token14, Some(Token::Identifier("z".to_string())));
+        assert_eq!(token15, Some(Token::Semicolon));
+
     }
 }
