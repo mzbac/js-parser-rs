@@ -1,45 +1,8 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
-#[derive(Debug, PartialEq)]
-enum Token {
-    Number(f64),
-    String(String),
-    Identifier(String),
-    Plus,
-    Minus,
-    Star,
-    Slash,
-    LParen,
-    RParen,
-    LBrace,
-    RBrace,
-    LBracket,
-    RBracket,
-    Semicolon,
-    Comma,
-    Dot,
-    Eq,
-    Neq,
-    Lt,
-    Gt,
-    Lte,
-    Gte,
-    Assign,
-    And,
-    Or,
-    Not,
-    Null,
-    True,
-    False,
-    Var,
-    If,
-    Else,
-    While,
-    Function,
-    Return,
-    This,
-}
+use super::Token::{Token};
+
 
 struct Lexer<'a> {
     source: Peekable<Chars<'a>>,
@@ -91,27 +54,27 @@ impl<'a> Lexer<'a> {
             }
             '(' => {
                 self.pos += 1;
-                Some(Token::LParen)
+                Some(Token::LeftParen)
             }
             ')' => {
                 self.pos += 1;
-                Some(Token::RParen)
+                Some(Token::RightParen)
             }
             '{' => {
                 self.pos += 1;
-                Some(Token::LBrace)
+                Some(Token::LeftBrace)
             }
             '}' => {
                 self.pos += 1;
-                Some(Token::RBrace)
+                Some(Token::RightBrace)
             }
             '[' => {
                 self.pos += 1;
-                Some(Token::LBracket)
+                Some(Token::LeftBracket)
             }
             ']' => {
                 self.pos += 1;
-                Some(Token::RBracket)
+                Some(Token::RightBracket)
             }
             ';' => {
                 self.pos += 1;
@@ -128,56 +91,55 @@ impl<'a> Lexer<'a> {
             '=' => {
                 if self.peek_n(1) == Some('=') {
                     self.pos += 2;
-                    Some(Token::Eq)
+                    Some(Token::EqualEqual)
                 } else {
                     self.pos += 1;
-                    Some(Token::Assign)
+                    Some(Token::Equal)
                 }
             }
             '!' => {
                 if self.peek_n(1) == Some('=') {
                     self.pos += 2;
-                    Some(Token::Neq)
+                    Some(Token::BangEqual)
                 } else {
                     self.pos += 1;
-
-                    Some(Token::Not)
+                    Some(Token::Bang)
                 }
             }
             '<' => {
                 if self.peek_n(1) == Some('=') {
                     self.pos += 2;
-                    Some(Token::Lte)
+                    Some(Token::LessEqual)
                 } else {
                     self.pos += 1;
-                    Some(Token::Lt)
+                    Some(Token::Less)
                 }
             }
             '>' => {
                 if self.peek_n(1) == Some('=') {
                     self.pos += 2;
-                    Some(Token::Gte)
+                    Some(Token::GreaterEqual)
                 } else {
                     self.pos += 1;
-                    Some(Token::Gt)
+                    Some(Token::Greater)
                 }
             }
             '&' => {
                 if self.peek_n(1) == Some('&') {
                     self.pos += 2;
-                    Some(Token::And)
+                    Some(Token::AmpersandAmpersand)
                 } else {
                     self.pos += 1;
-                    Some(Token::And)
+                    Some(Token::Ampersand)
                 }
             }
             '|' => {
                 if self.peek_n(1) == Some('|') {
                     self.pos += 2;
-                    Some(Token::Or)
+                    Some(Token::PipePipe)
                 } else {
                     self.pos += 1;
-                    Some(Token::Or)
+                    Some(Token::Pipe)
                 }
             }
             _ => None,
@@ -199,7 +161,6 @@ impl<'a> Lexer<'a> {
             chars.next();
         }
         chars.peek().cloned()
-
     }
 
     fn scan_number(&mut self) -> Token {
@@ -253,6 +214,8 @@ impl<'a> Lexer<'a> {
             "return" => Token::Return,
             "this" => Token::This,
             "null" => Token::Null,
+            "True" => Token::True,
+            "False" => Token::False,
             _ => Token::Identifier(identifier),
         }
     }
@@ -287,7 +250,7 @@ mod tests {
 
         assert_eq!(lexer.next_token(), Some(Token::Var));
         assert_eq!(lexer.next_token(), Some(Token::Identifier("x".to_string())));
-        assert_eq!(lexer.next_token(), Some(Token::Assign));
+        assert_eq!(lexer.next_token(), Some(Token::Equal));
         assert_eq!(lexer.next_token(), Some(Token::Number(10.0)));
         assert_eq!(lexer.next_token(), Some(Token::Semicolon));
         assert_eq!(lexer.next_token(), None);
@@ -303,7 +266,7 @@ mod tests {
             lexer.next_token(),
             Some(Token::Identifier("name".to_string()))
         );
-        assert_eq!(lexer.next_token(), Some(Token::Assign));
+        assert_eq!(lexer.next_token(), Some(Token::Equal));
         assert_eq!(lexer.next_token(), Some(Token::String("John".to_string())));
         assert_eq!(lexer.next_token(), Some(Token::Semicolon));
         assert_eq!(lexer.next_token(), None);
@@ -315,11 +278,11 @@ mod tests {
         let mut lexer = Lexer::new(source);
 
         assert_eq!(lexer.next_token(), Some(Token::Identifier("x".to_string())));
-        assert_eq!(lexer.next_token(), Some(Token::Gt));
+        assert_eq!(lexer.next_token(), Some(Token::Greater));
         assert_eq!(lexer.next_token(), Some(Token::Number(10.0)));
-        assert_eq!(lexer.next_token(), Some(Token::And));
+        assert_eq!(lexer.next_token(), Some(Token::AmpersandAmpersand));
         assert_eq!(lexer.next_token(), Some(Token::Identifier("y".to_string())));
-        assert_eq!(lexer.next_token(), Some(Token::Lt));
+        assert_eq!(lexer.next_token(), Some(Token::Less));
         assert_eq!(lexer.next_token(), Some(Token::Number(20.0)));
         assert_eq!(lexer.next_token(), None);
     }

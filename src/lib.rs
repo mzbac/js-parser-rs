@@ -1,1 +1,1 @@
-mod Lexer;
+mod lexer;
