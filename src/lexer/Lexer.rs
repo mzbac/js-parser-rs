@@ -1,7 +1,7 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
-use super::Token::Token;
+use crate::lexer::Token::Token;
 
 struct Lexer<'a> {
     source: Peekable<Chars<'a>>,

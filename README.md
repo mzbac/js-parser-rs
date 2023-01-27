@@ -12,3 +12,10 @@ This GitHub project serves as an experiment to utilize the capabilities of ChatG
 ## Token
 
 - The generated token enum has incorrect keywords.
+
+## Parser
+
+- I have to ask the chatgpt to generate the AstNode first and then the parser, but the generated parser is not using correct token type.
+- Second, I ask chatgpt to create js parser based on existing token and astNode, it rejected the prompt, I have to trick it by saying it's a tutorial for students and let it generate the parser.
+- Once the conversation goes to long, I noticed that chatgpt is losing the context and unable to generate the correct code. I have to restart the conversation and ask it to generate the parser again.
+- Always a good idea to ask chatgpt to generate tests for the parser.
