@@ -19,3 +19,5 @@ This GitHub project serves as an experiment to utilize the capabilities of ChatG
 - Second, I ask chatgpt to create js parser based on existing token and astNode, it rejected the prompt, I have to trick it by saying it's a tutorial for students and let it generate the parser.
 - Once the conversation goes to long, I noticed that chatgpt is losing the context and unable to generate the correct code. I have to restart the conversation and ask it to generate the parser again.
 - Always a good idea to ask chatgpt to generate tests for the parser.
+
+test
